@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 
-const port = 3000 || process.env.port;
+const port = 4000 || process.env.port;
 const cors = require("cors");
 
 const mealsRouter = require("./routes/mealsRoutes");
@@ -32,11 +32,11 @@ app.options(
   })
 );
 
-app.get("/", (req, res) => {
+app.get("/api/", (req, res) => {
   res.json({ message: "ok" });
 });
 
-app.use("/meals", mealsRouter);
+app.use("/api/meals", mealsRouter);
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
