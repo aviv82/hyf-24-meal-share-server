@@ -1,6 +1,6 @@
 CREATE TABLE Meals (
 MealId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-Title varchar(200) UNIQUE,
+Title varchar(200) NOT NULL UNIQUE,
 [Description] text(500),
 [Location] varchar(200),
 [When] datetime,

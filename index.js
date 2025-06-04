@@ -4,6 +4,8 @@ const app = express();
 const port = 3000 || process.env.port;
 const cors = require("cors");
 
+const mealsRouter = require("./routes/mealsRoutes");
+
 app.use(express.json());
 
 app.use(
@@ -13,11 +15,28 @@ app.use(
 );
 
 app.use(cors());
-// app.options("*", cors());
+app.options(
+  "*any",
+  cors({
+    methods: ["GET", "HEAD", "OPTIONS", "POST", "PUT"],
+    allowedHeaders: [
+      "origin",
+      "X-Requested-With",
+      "Content-Type",
+      "Accept",
+      "x-client-key",
+      "x-client-token",
+      "x-client-secret",
+      "Authorization",
+    ],
+  })
+);
 
 app.get("/", (req, res) => {
   res.json({ message: "ok" });
 });
+
+app.use("/meals", mealsRouter);
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
