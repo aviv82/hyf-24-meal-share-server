@@ -91,4 +91,54 @@ router.post("/", (req, res, next) => {
   }
 });
 
+router.put("/:id", (req, res, next) => {
+  if (!req.params.id || req.params.id <= 0) {
+    res.status(400).json({ error: "Invalid meal Id" });
+    return;
+  }
+
+  if (!req.body) {
+    res.status(400).json({ error: "Update meal request cannot be blank." });
+    return;
+  }
+
+  const data = {
+    Title: req.body.title,
+    Description: req.body.description,
+    Location: req.body.location,
+    When: CreateFromSqlString(req.body.when),
+    MaxReservations: req.body.maxReservations,
+    Price: req.body.price,
+    CreatedDate: new Date().toISOString().slice(0, 19).replace("T", " "),
+  };
+
+  const sql = `UPDATE Meals SET 
+  Title = COALESCE("${data.Title}", Title), 
+  Description = COALESCE("${data.Description}", Description), 
+  Location = COALESCE("${data.Location}", Location), 
+  [When] = COALESCE("${data.When}", [When]), 
+  MaxReservations = COALESCE("${data.MaxReservations}", MaxReservations), 
+  Price = COALESCE("${data.Price}", Price)
+  WHERE MealId = ${req.params.id}`;
+
+  console.log("sql", sql);
+
+  try {
+    db.run(sql, function (err, result) {
+      if (err) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      data.MealId = this.lastID;
+      res.status(201).json({
+        message: "Meal updated",
+        data,
+      });
+    });
+  } catch (e) {
+    console.error("Error while creating meal", e.message);
+    next(e);
+  }
+});
+
 module.exports = router;
