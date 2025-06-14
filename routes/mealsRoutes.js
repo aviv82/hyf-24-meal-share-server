@@ -9,10 +9,13 @@ router.use(bodyParser.urlencoded({ extended: false }));
 router.use(bodyParser.json());
 
 router.get("/", (req, res, next) => {
+  const sql = "SELECT * FROM Meals";
+  console.log(sql);
+
   try {
-    db.all("SELECT * FROM Meals", (err, rows) => {
+    db.all(sql, (err, rows) => {
       if (err) {
-        return res.status(400).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
       }
       return res.status(200).json({
         message: "success",
@@ -26,24 +29,28 @@ router.get("/", (req, res, next) => {
 });
 
 router.get("/:id", (req, res, next) => {
+  if (!req.params.id || req.params.id <= 0) {
+    return res.status(400).json({ error: "Invalid meal Id" });
+  }
+
+  const sql = `SELECT * FROM Meals WHERE MealId = ${req.params.id}`;
+  console.log(sql);
+
   try {
-    db.get(
-      `SELECT * FROM Meals WHERE MealId = ${req.params.id}`,
-      (err, row) => {
-        if (err) {
-          return res.status(400).json({ error: err.message });
-        }
-        if (!row) {
-          return res.status(404).json({
-            message: "Meal not found",
-          });
-        }
-        res.status(200).json({
-          message: "success",
-          data: row,
+    db.get(sql, (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (!row) {
+        return res.status(404).json({
+          message: "Meal not found",
         });
       }
-    );
+      res.status(200).json({
+        message: "success",
+        data: row,
+      });
+    });
   } catch (e) {
     console.error("Error while getting Meal", e.message);
     next(e);
@@ -54,6 +61,7 @@ router.post("/", (req, res, next) => {
   if (!req.body.title || req.body.title === "") {
     return res.status(400).json({ error: "New meal title must be provided" });
   }
+
   const data = {
     MealId: 0,
     Title: req.body.title,
@@ -68,11 +76,12 @@ router.post("/", (req, res, next) => {
   const sql = `INSERT INTO Meals 
   (Title, Description, Location, [When], MaxReservations, Price, CreatedDate) 
   VALUES ("${data.Title}","${data.Description}","${data.Location}",'${data.When}',${data.MaxReservations},${data.Price},'${data.CreatedDate}')`;
-  console.log("sql", sql);
+  console.log(sql);
+
   try {
     db.run(sql, function (err, result) {
       if (err) {
-        return res.status(400).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
       }
       data.MealId = this.lastID;
       res.status(201).json({
@@ -116,23 +125,23 @@ router.put("/:id", (req, res, next) => {
   Price = COALESCE("${data.Price}", Price)
   WHERE MealId = ${req.params.id}`;
 
-  console.log("sql", sql);
+  console.log(sql);
 
   try {
     db.get(
       `SELECT * FROM Meals WHERE MealId = ${req.params.id}`,
       (err, row) => {
         if (err) {
-          throw err;
+          return res.status(500).json({ error: err.message });
         }
         if (!row) {
           return res.status(404).json({
             message: "Meal not found",
           });
         }
-        db.run(sql, function (err, result) {
+        db.run(sql, function (err) {
           if (err) {
-            return res.status(400).json({ error: err.message });
+            return res.status(500).json({ error: err.message });
           }
           data.MealId = this.lastID;
           res.status(200).json({
@@ -153,32 +162,31 @@ router.delete("/:id", (req, res, next) => {
     return res.status(400).json({ error: "Meal not found" });
   }
 
+  const selectSql = `SELECT * FROM Meals WHERE MealId = ${req.params.id}`;
+  const deleteSql = `DELETE FROM Meals WHERE MealId = ${req.params.id}`;
+
   try {
-    db.get(
-      `SELECT * FROM Meals WHERE MealId = ${req.params.id}`,
-      (err, row) => {
-        if (err) {
-          throw err;
-        }
-        if (!row) {
-          return res.status(404).json({
-            message: "Meal not found",
-          });
-        }
-        db.run(
-          `DELETE FROM Meals WHERE MealId = ${req.params.id}`,
-          function (err, result) {
-            if (err) {
-              return res.status(400).json({ error: res.message });
-            }
-            return res.status(204).json({
-              message: "Meal deleted",
-              changes: this.changes,
-            });
-          }
-        );
+    console.log(selectSql);
+    db.get(selectSql, (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
       }
-    );
+      if (!row) {
+        return res.status(404).json({
+          message: "Meal not found",
+        });
+      }
+      console.log(selectSql);
+      db.run(deleteSql, function (err) {
+        if (err) {
+          return res.status(500).json({ error: res.message });
+        }
+        return res.status(204).json({
+          message: "Meal deleted",
+          changes: this.changes,
+        });
+      });
+    });
   } catch (e) {
     console.error("Error while deleting meal", e.message);
     next(e);
