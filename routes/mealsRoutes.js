@@ -12,10 +12,9 @@ router.get("/", (req, res, next) => {
   try {
     db.all("SELECT * FROM Meals", (err, rows) => {
       if (err) {
-        res.status(400).json({ error: err.message });
-        return;
+        return res.status(400).json({ error: err.message });
       }
-      res.status(200).json({
+      return res.status(200).json({
         message: "success",
         data: rows,
       });
@@ -32,14 +31,12 @@ router.get("/:id", (req, res, next) => {
       `SELECT * FROM Meals WHERE MealId = ${req.params.id}`,
       (err, row) => {
         if (err) {
-          res.status(400).json({ error: err.message });
-          return;
+          return res.status(400).json({ error: err.message });
         }
         if (!row) {
-          res.status(404).json({
+          return res.status(404).json({
             message: "Meal not found",
           });
-          return;
         }
         res.status(200).json({
           message: "success",
@@ -55,8 +52,7 @@ router.get("/:id", (req, res, next) => {
 
 router.post("/", (req, res, next) => {
   if (!req.body.title || req.body.title === "") {
-    res.status(400).json({ error: "New meal title must be provided" });
-    return;
+    return res.status(400).json({ error: "New meal title must be provided" });
   }
   const data = {
     MealId: 0,
@@ -76,8 +72,7 @@ router.post("/", (req, res, next) => {
   try {
     db.run(sql, function (err, result) {
       if (err) {
-        res.status(400).json({ error: err.message });
-        return;
+        return res.status(400).json({ error: err.message });
       }
       data.MealId = this.lastID;
       res.status(201).json({
@@ -93,13 +88,13 @@ router.post("/", (req, res, next) => {
 
 router.put("/:id", (req, res, next) => {
   if (!req.params.id || req.params.id <= 0) {
-    res.status(400).json({ error: "Invalid meal Id" });
-    return;
+    return res.status(400).json({ error: "Invalid meal Id" });
   }
 
   if (!req.body) {
-    res.status(400).json({ error: "Update meal request cannot be blank." });
-    return;
+    return res
+      .status(400)
+      .json({ error: "Update meal request cannot be blank." });
   }
 
   const data = {
@@ -124,19 +119,68 @@ router.put("/:id", (req, res, next) => {
   console.log("sql", sql);
 
   try {
-    db.run(sql, function (err, result) {
-      if (err) {
-        res.status(400).json({ error: err.message });
-        return;
+    db.get(
+      `SELECT * FROM Meals WHERE MealId = ${req.params.id}`,
+      (err, row) => {
+        if (err) {
+          throw err;
+        }
+        if (!row) {
+          return res.status(404).json({
+            message: "Meal not found",
+          });
+        }
+        db.run(sql, function (err, result) {
+          if (err) {
+            return res.status(400).json({ error: err.message });
+          }
+          data.MealId = this.lastID;
+          res.status(200).json({
+            message: "Meal updated",
+            data,
+          });
+        });
       }
-      data.MealId = this.lastID;
-      res.status(201).json({
-        message: "Meal updated",
-        data,
-      });
-    });
+    );
   } catch (e) {
-    console.error("Error while creating meal", e.message);
+    console.error("Error while updating meal", e.message);
+    next(e);
+  }
+});
+
+router.delete("/:id", (req, res, next) => {
+  if (!req.params.id || req.params.id <= 0) {
+    return res.status(400).json({ error: "Meal not found" });
+  }
+
+  try {
+    db.get(
+      `SELECT * FROM Meals WHERE MealId = ${req.params.id}`,
+      (err, row) => {
+        if (err) {
+          throw err;
+        }
+        if (!row) {
+          return res.status(404).json({
+            message: "Meal not found",
+          });
+        }
+        db.run(
+          `DELETE FROM Meals WHERE MealId = ${req.params.id}`,
+          function (err, result) {
+            if (err) {
+              return res.status(400).json({ error: res.message });
+            }
+            return res.status(204).json({
+              message: "Meal deleted",
+              changes: this.changes,
+            });
+          }
+        );
+      }
+    );
+  } catch (e) {
+    console.error("Error while deleting meal", e.message);
     next(e);
   }
 });
