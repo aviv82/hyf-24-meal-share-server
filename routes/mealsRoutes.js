@@ -9,7 +9,7 @@ router.use(bodyParser.urlencoded({ extended: false }));
 router.use(bodyParser.json());
 
 router.get("/", (req, res, next) => {
-  const sql = "SELECT * FROM Meals";
+  const sql = "SELECT * FROM Meals ORDER by MealId";
   console.log(sql);
 
   try {
@@ -17,10 +17,17 @@ router.get("/", (req, res, next) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
-      return res.status(200).json({
-        message: "success",
-        data: rows,
-      });
+      if (rows.length === 0) {
+        return res.status(404).json({
+          message: "no meals found",
+          data: rows,
+        });
+      } else {
+        return res.status(200).json({
+          message: "success",
+          data: rows,
+        });
+      }
     });
   } catch (e) {
     console.error("Error while getting meals", e.message);
@@ -28,7 +35,7 @@ router.get("/", (req, res, next) => {
   }
 });
 
-router.get("/:id", (req, res, next) => {
+router.get("/by-id/:id", (req, res, next) => {
   if (!req.params.id || req.params.id <= 0) {
     return res.status(400).json({ error: "Invalid meal Id" });
   }
@@ -189,6 +196,128 @@ router.delete("/:id", (req, res, next) => {
     });
   } catch (e) {
     console.error("Error while deleting meal", e.message);
+    next(e);
+  }
+});
+
+// node.js week 1 routes
+
+// future-meals
+
+router.get("/future-meals", (req, res, next) => {
+  const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+
+  const sql = `SELECT * FROM Meals WHERE [When] > '${now}'`;
+  console.log(sql);
+
+  try {
+    db.all(sql, (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (rows.length === 0) {
+        return res.status(404).json({
+          message: "no future meals found",
+          data: rows,
+        });
+      } else {
+        return res.status(200).json({
+          message: "success",
+          data: rows,
+        });
+      }
+    });
+  } catch (e) {
+    console.error("Error while getting meals", e.message);
+    next(e);
+  }
+});
+
+// past-meals
+
+router.get("/past-meals", (req, res, next) => {
+  const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+
+  const sql = `SELECT * FROM Meals WHERE [When] < '${now}'`;
+  console.log(sql);
+
+  try {
+    db.all(sql, (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (rows.length === 0) {
+        return res.status(404).json({
+          message: "no past meals found",
+          data: rows,
+        });
+      } else {
+        return res.status(200).json({
+          message: "success",
+          data: rows,
+        });
+      }
+    });
+  } catch (e) {
+    console.error("Error while getting meals", e.message);
+    next(e);
+  }
+});
+
+// first meal
+
+router.get("/first-meal", (req, res, next) => {
+  const sql = "SELECT * FROM Meals ORDER by MealId ASC LIMIT 1";
+  console.log(sql);
+
+  try {
+    db.all(sql, (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (rows.length === 0) {
+        return res.status(404).json({
+          message: "no meals found",
+          data: rows,
+        });
+      } else {
+        return res.status(200).json({
+          message: "success",
+          data: rows,
+        });
+      }
+    });
+  } catch (e) {
+    console.error("Error while getting meals", e.message);
+    next(e);
+  }
+});
+
+// last meal
+
+router.get("/last-meal", (req, res, next) => {
+  const sql = "SELECT * FROM Meals ORDER by MealId DESC LIMIT 1";
+  console.log(sql);
+
+  try {
+    db.all(sql, (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (rows.length === 0) {
+        return res.status(404).json({
+          message: "no meals found",
+          data: rows,
+        });
+      } else {
+        return res.status(200).json({
+          message: "success",
+          data: rows,
+        });
+      }
+    });
+  } catch (e) {
+    console.error("Error while getting meals", e.message);
     next(e);
   }
 });
