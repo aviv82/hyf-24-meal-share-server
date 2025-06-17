@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const bodyParser = require("body-parser");
 
-const CreateFromSqlString = require("../utils/dateTimeHelpers");
 const db = require("../services/dbServices");
 
 router.use(bodyParser.urlencoded({ extended: false }));

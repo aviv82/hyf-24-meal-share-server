@@ -7,6 +7,7 @@ const cors = require("cors");
 
 const mealsRouter = require("./routes/mealsRoutes");
 const reservationsRouter = require("./routes/reservationsRoutes");
+const reviewsRouter = require("./routes/reviewsRoutes");
 
 app.use(express.json());
 
@@ -40,6 +41,7 @@ app.get("/api/", (req, res) => {
 
 app.use("/api/meals", mealsRouter);
 app.use("/api/reservations", reservationsRouter);
+app.use("/api/reviews", reviewsRouter);
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
