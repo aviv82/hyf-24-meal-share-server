@@ -65,12 +65,12 @@ router.get("/", (req, res, next) => {
         return res.status(404).json({
           message: "no meals found",
           data: rows,
-          totalResults: rows.length,
         });
       } else {
         return res.status(200).json({
           message: "success",
           data: rows,
+          totalResults: rows.length,
         });
       }
     });
