@@ -9,7 +9,51 @@ router.use(bodyParser.urlencoded({ extended: false }));
 router.use(bodyParser.json());
 
 router.get("/", (req, res, next) => {
-  const sql = "SELECT * FROM Meals ORDER by MealId";
+  let sql = "SELECT * FROM Meals";
+
+  let filterCount = 0;
+
+  if (req.query.maxPrice) {
+    filterCount++;
+    sql = sql + ` WHERE Price < ${req.query.maxPrice}`;
+  }
+
+  if (req.query.title) {
+    sql =
+      sql +
+      ` ${filterCount === 0 ? "WHERE" : "AND"} Title LIKE '%${
+        req.query.title
+      }%'`;
+    filterCount++;
+  }
+
+  if (req.query.dateAfter) {
+    sql =
+      sql +
+      ` ${filterCount === 0 ? "WHERE" : "AND"} [When] > '${
+        req.query.dateAfter
+      }'`;
+    filterCount++;
+  }
+
+  if (req.query.dateBefore) {
+    sql =
+      sql +
+      ` ${filterCount === 0 ? "WHERE" : "AND"} [When] < '${
+        req.query.dateBefore
+      }'`;
+    filterCount++;
+  }
+
+  if (req.query.sortKey) {
+    sql =
+      sql + ` ORDER by [${req.query.sortKey}] ${req.query.sortDir ?? "asc"}`;
+  }
+
+  if (req.query.limit) {
+    sql = sql + ` LIMIT ${req.query.limit}`;
+  }
+
   console.log(sql);
 
   try {
@@ -21,6 +65,7 @@ router.get("/", (req, res, next) => {
         return res.status(404).json({
           message: "no meals found",
           data: rows,
+          totalResults: rows.length,
         });
       } else {
         return res.status(200).json({
