@@ -13,6 +13,17 @@ router.get("/", (req, res, next) => {
 
   let filterCount = 0;
 
+  if (req.query.availableReservations) {
+    sql = `SELECT MealId, Title, Description, Location, MaxReservations, [When], Price, CreatedDate
+          FROM (select m.MealId MealId, m.Title Title, m.Description Description, Location Location, MaxReservations MaxReservations, [when] [When], Price Price, m.CreatedDate CreatedDate, COUNT(m.MealId) c 
+          FROM Meals m
+          JOIN Reservations r on r.MealId = m.MealId 
+          GROUP by m.MealId
+          HAVING c ${
+            req.query.availableReservations === "true" ? "<" : ">"
+          } m.MaxReservations)`;
+  }
+
   if (req.query.maxPrice) {
     filterCount++;
     sql = sql + ` WHERE Price < ${req.query.maxPrice}`;
